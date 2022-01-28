@@ -6,7 +6,7 @@ use ArrayObject;
 use Closure;
 use Illuminate\Support\Str;
 
-class Service
+abstract class Service
 {
     public const BIND_NAME_EXP = '/\{\{([a-z0-9\_\.\*]+)\}\}/';
     protected ArrayObject $childs;
@@ -15,7 +15,6 @@ class Service
     protected ArrayObject $inputs;
     protected ArrayObject $names;
     protected bool $processed;
-    protected static Closure $validationErrorListResolver;
     protected ArrayObject $validations;
 
     public function __construct(array $inputs = [], array $names = [])
@@ -182,11 +181,6 @@ class Service
         ksort($arr);
 
         return new ArrayObject($arr);
-    }
-
-    public function getValidationErrorList($key, $data, $ruleLists, $names)
-    {
-        return call_user_func_array(static::$validationErrorListResolver, [$key, $data, $ruleLists, $names]);
     }
 
     public static function initService($value)
@@ -443,6 +437,8 @@ class Service
         return array_keys($rtn);
     }
 
+    abstract protected function getValidationErrors($locale, $key, $data, $ruleLists, $names);
+
     protected function isRequiredRule($rule)
     {
         return preg_match('/^required/', $rule);
@@ -546,7 +542,7 @@ class Service
         $data = $this->getAvailableData($key);
 
         foreach ($ruleLists as $ruleKey => $ruleList) {
-            $errors = $this->getValidationErrorList($ruleKey, $data->getArrayCopy(), $ruleList, $this->names->getArrayCopy());
+            $errors = $this->getValidationErrors($ruleKey, $data->getArrayCopy(), $ruleList, $this->names->getArrayCopy());
 
             if (!empty($errors->messages())) {
                 $this->validations->offsetSet($ruleKey, false);
