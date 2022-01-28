@@ -16,6 +16,7 @@ abstract class Service
     protected ArrayObject $names;
     protected bool $processed;
     protected ArrayObject $validations;
+    private static Closure $localeResolver;
 
     public function __construct(array $inputs = [], array $names = [])
     {
@@ -257,6 +258,11 @@ abstract class Service
         }
     }
 
+    public static function setLocaleResolver(Closure $func)
+    {
+        static::$localeResolver = $func;
+    }
+
     public static function setValidationErrorListResolver(Closure $resolver)
     {
         static::$validationErrorListResolver = $resolver;
@@ -404,6 +410,15 @@ abstract class Service
         return $deps;
     }
 
+    protected function getLocale()
+    {
+        if (empty(static::$localeResolver)) {
+            throw new \Exception('you must be implement locale resolver using Service::setLocaleResolver');
+        }
+
+        return static::$localeResolver();
+    }
+
     protected function getOrderedCallbackKeys($key)
     {
         $promiseKeys = array_filter(array_keys($this->getAllPromiseLists()->getArrayCopy()), function ($value) use ($key) {
@@ -542,7 +557,8 @@ abstract class Service
         $data = $this->getAvailableData($key);
 
         foreach ($ruleLists as $ruleKey => $ruleList) {
-            $errors = $this->getValidationErrors($ruleKey, $data->getArrayCopy(), $ruleList, $this->names->getArrayCopy());
+            $locale = $this->getLocale();
+            $errors = $this->getValidationErrors($locale, $ruleKey, $data->getArrayCopy(), $ruleList, $this->names->getArrayCopy());
 
             if (!empty($errors->messages())) {
                 $this->validations->offsetSet($ruleKey, false);
