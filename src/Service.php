@@ -222,7 +222,7 @@ abstract class Service
             }
 
             foreach (array_keys((array) $this->getAllRuleLists()) as $key) {
-                $this->validate(explode('.', $key)[0]);
+                $this->validate($key);
             }
 
             foreach (array_keys((array) $this->getAllLoaders()) as $key) {
@@ -270,7 +270,6 @@ abstract class Service
 
     protected function getAvailableData($key)
     {
-        $key = explode('.', $key)[0];
         $data = $this->getData();
         $loader = $this->getAllLoaders()->offsetExists($key) ? $this->getAllLoaders()->offsetGet($key) : null;
 
@@ -338,9 +337,7 @@ abstract class Service
         $ruleLists = [
             $key => $this->getAllRuleLists()->offsetExists($key) ? $this->getAllRuleLists()->offsetGet($key) : [],
         ];
-        $mainKey = explode('.', $key)[0];
-
-        if (!$this->getAllLoaders()->offsetExists($mainKey) && !$this->inputs->offsetExists($mainKey)) {
+        if (!$this->getAllLoaders()->offsetExists($key) && !$this->inputs->offsetExists($key)) {
             $ruleLists[$key] = array_filter($ruleLists[$key], function ($rule) {
                 return $this->isRequiredRule($rule);
             }, ARRAY_FILTER_USE_KEY);
@@ -362,8 +359,7 @@ abstract class Service
                     $this->names->offsetSet($bindKey, $this->resolveBindName('{{'.$bindKey.'}}'));
 
                     if (!$this->validate($bindKey)) {
-                        $this->validations->offsetSet($mainKey, false);
-
+                        $this->validations->offsetSet($key, false);
                         unset($ruleList[$rule]);
 
                         continue;
