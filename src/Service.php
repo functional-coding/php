@@ -4,7 +4,6 @@ namespace FunctionalCoding;
 
 use ArrayObject;
 use Closure;
-use Illuminate\Support\Str;
 
 abstract class Service
 {
@@ -400,7 +399,15 @@ abstract class Service
         $params = (new \ReflectionFunction($func))->getParameters();
 
         foreach ($params as $i => $param) {
-            $deps[] = Str::snake($param->name);
+            $dep = $param->name;
+
+            if (!ctype_lower($dep)) {
+                $dep = preg_replace('/\s+/u', '', ucwords($dep));
+                $dep = preg_replace('/(.)(?=[A-Z])/u', '$1'.'_', $dep);
+                $dep = mb_strtolower($dep, 'UTF-8');
+            }
+
+            $deps[] = $dep;
         }
 
         return $deps;
